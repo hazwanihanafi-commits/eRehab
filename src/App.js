@@ -3,6 +3,8 @@ import axios from "axios";
 import SignatureCanvas from "react-signature-canvas";
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const API = "https://api.sheetbest.com/sheets/f2120c7f-e12c-433c-aaef-9d8e9e0f71ae";
 
@@ -23,7 +25,6 @@ export default function App() {
     axios.get(API).then(res => setData(res.data));
   }, []);
 
-  // Add session
   const addSession = () => {
     setSessions([
       ...sessions,
@@ -31,46 +32,35 @@ export default function App() {
     ]);
   };
 
-  // Update session
   const updateSession = (i, field, value) => {
     const newS = [...sessions];
     newS[i][field] = value;
     setSessions(newS);
   };
 
-  // Calculate duration
   const calculateDuration = (start, end) => {
     if (!start || !end) return "";
     const s = new Date(`1970-01-01T${start}`);
     const e = new Date(`1970-01-01T${end}`);
-    const diff = (e - s) / (1000 * 60);
-    return diff + " min";
+    return (e - s) / (1000 * 60) + " min";
   };
 
-  // EXPORT REPORT
-  const exportPatient = () => {
-    const filtered = data.filter(d => d.patient === patient);
+  // 🔥 PREMIUM PDF FUNCTION
+  const generatePDF = async () => {
+    const element = document.getElementById("report");
 
-    let text = `Patient Report\n\n`;
-    text += `Patient: ${patient}\n\n`;
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
 
-    filtered.forEach((row, i) => {
-      text += `Session ${i + 1}\n`;
-      text += `Therapist: ${row.therapist}\n`;
-      text += `Date: ${row.date}\n`;
-      text += `Notes: ${row.notes}\n\n`;
-    });
+    const pdf = new jsPDF("p", "mm", "a4");
 
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = window.URL.createObjectURL(blob);
+    const imgWidth = 210;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${patient}_report.txt`;
-    a.click();
+    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+    pdf.save(`${patient}_Clinical_Report.pdf`);
   };
 
-  // SUBMIT
   const submit = async () => {
     if (!patient || !therapist || sessions.length === 0) {
       alert("Please complete all required fields");
@@ -133,7 +123,6 @@ export default function App() {
     }
   };
 
-  // Dashboard count
   let robotik = 0, physio = 0, ot = 0;
 
   data.forEach(row => {
@@ -167,10 +156,6 @@ export default function App() {
           e-Rehab Clinical Documentation System
         </h1>
         <p className="text-sm">Developed by Hazwani Ahmad Yusof</p>
-        <p className="text-xs">
-          Pusat Kanser Tun Abdullah Ahmad Badawi (PKTAAB), Universiti Sains Malaysia
-        </p>
-        <p className="text-xs">15 April 2026</p>
       </div>
 
       {/* DASHBOARD */}
@@ -182,9 +167,7 @@ export default function App() {
 
         <div className="bg-white p-4 rounded shadow">
           <p>Total Sessions</p>
-          <h2 className="text-2xl font-bold">
-            {robotik + physio + ot}
-          </h2>
+          <h2 className="text-2xl font-bold">{robotik + physio + ot}</h2>
         </div>
 
         <div className="bg-white p-4 rounded shadow">
@@ -197,13 +180,16 @@ export default function App() {
 
         <h2 className="text-xl font-semibold mb-4">Treatment Entry</h2>
 
-        <input value={patient} placeholder="Patient Name" className="border p-2 w-full mb-2"
+        <input value={patient} placeholder="Patient Name"
+          className="border p-2 w-full mb-2"
           onChange={e => setPatient(e.target.value)} />
 
-        <input value={patientID} placeholder="Patient ID / IC" className="border p-2 w-full mb-4"
+        <input value={patientID} placeholder="Patient ID / IC"
+          className="border p-2 w-full mb-4"
           onChange={e => setPatientID(e.target.value)} />
 
-        <input value={therapist} placeholder="Therapist Name" className="border p-2 w-full mb-2"
+        <input value={therapist} placeholder="Therapist Name"
+          className="border p-2 w-full mb-2"
           onChange={e => setTherapist(e.target.value)} />
 
         <select className="border p-2 w-full mb-4"
@@ -215,7 +201,6 @@ export default function App() {
 
         {sessions.map((s, i) => (
           <div key={i} className="border p-3 mb-3 rounded">
-
             <select className="border p-2 w-full mb-2"
               onChange={e => updateSession(i, "type", e.target.value)}>
               <option>Robotik</option>
@@ -251,21 +236,18 @@ export default function App() {
           className="border p-2 w-full mb-4"
           onChange={e => setNotes(e.target.value)} />
 
-        {/* CONSENT */}
         <label className="flex items-center mb-2">
           <input type="checkbox" checked={consent}
             onChange={() => setConsent(!consent)} className="mr-2" />
           Patient confirms treatment received
         </label>
 
-        {/* VERIFY */}
         <label className="flex items-center mb-4">
           <input type="checkbox" checked={verified}
             onChange={() => setVerified(!verified)} className="mr-2" />
           Therapist verifies session
         </label>
 
-        {/* SIGNATURE */}
         <p className="font-semibold mb-2">Patient Signature</p>
         <SignatureCanvas
           ref={sigPad}
@@ -277,11 +259,40 @@ export default function App() {
           Submit Treatment
         </button>
 
-        <button onClick={exportPatient}
-          className="bg-purple-600 text-white px-4 py-2 w-full mt-3">
-          Export Patient Report
+        <button onClick={generatePDF}
+          className="bg-black text-white px-4 py-2 w-full mt-3">
+          Generate Premium PDF
         </button>
 
+      </div>
+
+      {/* PDF TEMPLATE (HIDDEN) */}
+      <div id="report" className="bg-white p-8 mt-6 text-black">
+        <h1 className="text-xl font-bold text-center mb-2">
+          e-Rehab Clinical Treatment Report
+        </h1>
+        <p className="text-center text-sm mb-4">
+          PKTAAB, Universiti Sains Malaysia
+        </p>
+
+        <p><b>Patient:</b> {patient}</p>
+        <p><b>ID:</b> {patientID}</p>
+        <p><b>Therapist:</b> {therapist}</p>
+
+        <hr className="my-3"/>
+
+        {sessions.map((s, i) => (
+          <p key={i}>
+            {s.type} | {s.start}-{s.end} | {calculateDuration(s.start, s.end)}
+          </p>
+        ))}
+
+        <p className="mt-3"><b>Notes:</b> {notes}</p>
+
+        <p className="mt-3">Consent: {consent ? "YES" : "NO"}</p>
+        <p>Verified: {verified ? "YES" : "NO"}</p>
+
+        <img src={sigPad.current?.toDataURL()} className="w-40 mt-4"/>
       </div>
 
     </div>
