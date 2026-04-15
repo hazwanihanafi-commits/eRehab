@@ -13,40 +13,65 @@ export default function App() {
 
   const sigPad = useRef(null);
 
+  // LOAD DATA
   useEffect(() => {
     axios.get(API).then(res => setData(res.data));
   }, []);
 
+  // ADD SESSION
   const addSession = () => {
     setSessions([...sessions, { type: "Robotik", time: "", duration: "" }]);
   };
 
+  // UPDATE SESSION
   const updateSession = (i, field, value) => {
     const newS = [...sessions];
     newS[i][field] = value;
     setSessions(newS);
   };
 
+  // SUBMIT (FIXED VERSION)
   const submit = async () => {
+    console.log("Submit clicked");
+
     if (!patient || sessions.length === 0) {
-      alert("Please complete form");
+      alert("Please fill patient & session");
       return;
     }
 
-    const signature = sigPad.current.toDataURL();
+    if (!sigPad.current || sigPad.current.isEmpty()) {
+      alert("Please sign first!");
+      return;
+    }
 
-    await axios.post(API, {
-      patient,
-      sessions: JSON.stringify(sessions),
-      signature,
-      status: "Completed",
-      date: new Date().toLocaleString()
-    });
+    try {
+      const signature = sigPad.current.toDataURL();
 
-    alert("Saved!");
-    window.location.reload();
+      await axios.post(API, {
+        patient,
+        sessions: JSON.stringify(sessions),
+        signature,
+        status: "Completed",
+        date: new Date().toLocaleString()
+      });
+
+      alert("✅ Data saved!");
+
+      // RESET FORM (better UX)
+      setPatient("");
+      setSessions([]);
+      sigPad.current.clear();
+
+      // reload dashboard
+      axios.get(API).then(res => setData(res.data));
+
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error saving data");
+    }
   };
 
+  // DASHBOARD COUNT
   let robotik = 0, physio = 0, ot = 0;
 
   data.forEach(row => {
@@ -78,7 +103,7 @@ export default function App() {
         e-Rehab Digital System
       </h1>
 
-      {/* Dashboard */}
+      {/* DASHBOARD */}
       <div className="grid grid-cols-3 gap-4 mb-6">
 
         <div className="bg-white p-4 rounded shadow">
@@ -99,7 +124,7 @@ export default function App() {
 
       </div>
 
-      {/* Form */}
+      {/* FORM */}
       <div className="bg-white p-6 rounded shadow max-w-xl">
 
         <h2 className="text-xl font-semibold mb-4">
@@ -107,6 +132,7 @@ export default function App() {
         </h2>
 
         <input
+          value={patient}
           placeholder="Patient Name"
           className="border p-2 w-full mb-3"
           onChange={e => setPatient(e.target.value)}
@@ -117,6 +143,7 @@ export default function App() {
 
             <select
               className="border p-2"
+              value={s.type}
               onChange={e => updateSession(i, "type", e.target.value)}
             >
               <option>Robotik</option>
@@ -131,7 +158,7 @@ export default function App() {
             />
 
             <input
-              placeholder="Duration"
+              placeholder="Duration (1h)"
               className="border p-2"
               onChange={e => updateSession(i, "duration", e.target.value)}
             />
@@ -146,16 +173,19 @@ export default function App() {
           + Add Session
         </button>
 
+        {/* SIGNATURE */}
         <p className="font-semibold mb-2">Patient Signature</p>
 
         <SignatureCanvas
           ref={sigPad}
-          canvasProps={{ className: "border w-full h-40 bg-white" }}
+          canvasProps={{
+            className: "border w-full h-40 bg-white"
+          }}
         />
 
         <button
           onClick={submit}
-          className="bg-green-600 text-white px-4 py-2 w-full"
+          className="bg-green-600 text-white px-4 py-2 w-full mt-3"
         >
           Submit Treatment
         </button>
