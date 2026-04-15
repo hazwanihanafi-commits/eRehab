@@ -4,7 +4,7 @@ import SignatureCanvas from "react-signature-canvas";
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 
-const API = "https://api.sheetbest.com/sheets/d7579616-c0b9-402d-8d3a-1cc5d47f12f2";
+const API = "https://api.sheetbest.com/sheets/b94defad-293c-4cd2-87b2-6cea25008f44";
 
 export default function App() {
   const [patient, setPatient] = useState("");
