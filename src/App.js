@@ -4,7 +4,7 @@ import SignatureCanvas from "react-signature-canvas";
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 
-const API = "https://api.sheetbest.com/sheets/371834a9-c99d-47fb-a236-0a5332e6f47c";
+const API = "https://api.sheetbest.com/sheets/f2120c7f-e12c-433c-aaef-9d8e9e0f71ae";
 
 export default function App() {
   const [patient, setPatient] = useState("");
@@ -14,6 +14,7 @@ export default function App() {
   const [sessions, setSessions] = useState([]);
   const [notes, setNotes] = useState("");
   const [verified, setVerified] = useState(false);
+  const [consent, setConsent] = useState(false);
   const [data, setData] = useState([]);
 
   const sigPad = useRef(null);
@@ -46,10 +47,38 @@ export default function App() {
     return diff + " min";
   };
 
-  // Submit
+  // EXPORT REPORT
+  const exportPatient = () => {
+    const filtered = data.filter(d => d.patient === patient);
+
+    let text = `Patient Report\n\n`;
+    text += `Patient: ${patient}\n\n`;
+
+    filtered.forEach((row, i) => {
+      text += `Session ${i + 1}\n`;
+      text += `Therapist: ${row.therapist}\n`;
+      text += `Date: ${row.date}\n`;
+      text += `Notes: ${row.notes}\n\n`;
+    });
+
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${patient}_report.txt`;
+    a.click();
+  };
+
+  // SUBMIT
   const submit = async () => {
     if (!patient || !therapist || sessions.length === 0) {
       alert("Please complete all required fields");
+      return;
+    }
+
+    if (!consent) {
+      alert("Patient consent is required");
       return;
     }
 
@@ -79,6 +108,7 @@ export default function App() {
         sessions: JSON.stringify(enrichedSessions),
         notes,
         signature,
+        consent: "YES",
         verified: "YES",
         status: "Completed",
         date: new Date().toLocaleString()
@@ -86,13 +116,13 @@ export default function App() {
 
       alert("✅ Saved successfully!");
 
-      // reset
       setPatient("");
       setPatientID("");
       setTherapist("");
       setSessions([]);
       setNotes("");
       setVerified(false);
+      setConsent(false);
       sigPad.current.clear();
 
       axios.get(API).then(res => setData(res.data));
@@ -103,7 +133,7 @@ export default function App() {
     }
   };
 
-  // Dashboard
+  // Dashboard count
   let robotik = 0, physio = 0, ot = 0;
 
   data.forEach(row => {
@@ -132,9 +162,16 @@ export default function App() {
     <div className="bg-gray-100 min-h-screen p-6">
 
       {/* HEADER */}
-      <h1 className="text-3xl font-bold text-blue-600 mb-6">
-        e-Rehab Clinical System
-      </h1>
+      <div className="bg-gradient-to-r from-blue-700 to-blue-500 text-white p-5 rounded mb-6 shadow">
+        <h1 className="text-2xl font-bold">
+          e-Rehab Clinical Documentation System
+        </h1>
+        <p className="text-sm">Developed by Hazwani Ahmad Yusof</p>
+        <p className="text-xs">
+          Pusat Kanser Tun Abdullah Ahmad Badawi (PKTAAB), Universiti Sains Malaysia
+        </p>
+        <p className="text-xs">15 April 2026</p>
+      </div>
 
       {/* DASHBOARD */}
       <div className="grid grid-cols-3 gap-4 mb-6">
@@ -160,69 +197,41 @@ export default function App() {
 
         <h2 className="text-xl font-semibold mb-4">Treatment Entry</h2>
 
-        {/* Patient */}
-        <input
-          value={patient}
-          placeholder="Patient Name"
-          className="border p-2 w-full mb-2"
-          onChange={e => setPatient(e.target.value)}
-        />
+        <input value={patient} placeholder="Patient Name" className="border p-2 w-full mb-2"
+          onChange={e => setPatient(e.target.value)} />
 
-        <input
-          value={patientID}
-          placeholder="Patient ID / IC"
-          className="border p-2 w-full mb-4"
-          onChange={e => setPatientID(e.target.value)}
-        />
+        <input value={patientID} placeholder="Patient ID / IC" className="border p-2 w-full mb-4"
+          onChange={e => setPatientID(e.target.value)} />
 
-        {/* Therapist */}
-        <input
-          value={therapist}
-          placeholder="Therapist Name"
-          className="border p-2 w-full mb-2"
-          onChange={e => setTherapist(e.target.value)}
-        />
+        <input value={therapist} placeholder="Therapist Name" className="border p-2 w-full mb-2"
+          onChange={e => setTherapist(e.target.value)} />
 
-        <select
-          className="border p-2 w-full mb-4"
-          value={role}
-          onChange={e => setRole(e.target.value)}
-        >
+        <select className="border p-2 w-full mb-4"
+          value={role} onChange={e => setRole(e.target.value)}>
           <option>Physio</option>
           <option>OT</option>
           <option>Rehab</option>
         </select>
 
-        {/* Sessions */}
         {sessions.map((s, i) => (
           <div key={i} className="border p-3 mb-3 rounded">
 
-            <select
-              className="border p-2 w-full mb-2"
-              onChange={e => updateSession(i, "type", e.target.value)}
-            >
+            <select className="border p-2 w-full mb-2"
+              onChange={e => updateSession(i, "type", e.target.value)}>
               <option>Robotik</option>
               <option>Physio</option>
               <option>OT</option>
             </select>
 
             <div className="grid grid-cols-2 gap-2 mb-2">
-              <input
-                type="time"
-                onChange={e => updateSession(i, "start", e.target.value)}
-                className="border p-2"
-              />
-              <input
-                type="time"
-                onChange={e => updateSession(i, "end", e.target.value)}
-                className="border p-2"
-              />
+              <input type="time" className="border p-2"
+                onChange={e => updateSession(i, "start", e.target.value)} />
+              <input type="time" className="border p-2"
+                onChange={e => updateSession(i, "end", e.target.value)} />
             </div>
 
-            <select
-              className="border p-2 w-full"
-              onChange={e => updateSession(i, "device", e.target.value)}
-            >
+            <select className="border p-2 w-full"
+              onChange={e => updateSession(i, "device", e.target.value)}>
               <option>Cyberdyne</option>
               <option>Manual</option>
             </select>
@@ -230,47 +239,47 @@ export default function App() {
             <p className="text-sm mt-2 text-gray-500">
               Duration: {calculateDuration(s.start, s.end)}
             </p>
-
           </div>
         ))}
 
-        <button
-          onClick={addSession}
-          className="bg-blue-600 text-white px-4 py-2 mb-4"
-        >
+        <button onClick={addSession}
+          className="bg-blue-600 text-white px-4 py-2 mb-4">
           + Add Session
         </button>
 
-        {/* Notes */}
-        <textarea
-          placeholder="Session Notes"
+        <textarea placeholder="Session Notes"
           className="border p-2 w-full mb-4"
-          onChange={e => setNotes(e.target.value)}
-        />
+          onChange={e => setNotes(e.target.value)} />
 
-        {/* Verification */}
-        <label className="flex items-center mb-4">
-          <input
-            type="checkbox"
-            checked={verified}
-            onChange={() => setVerified(!verified)}
-            className="mr-2"
-          />
-          Therapist confirms session is accurate
+        {/* CONSENT */}
+        <label className="flex items-center mb-2">
+          <input type="checkbox" checked={consent}
+            onChange={() => setConsent(!consent)} className="mr-2" />
+          Patient confirms treatment received
         </label>
 
-        {/* Signature */}
+        {/* VERIFY */}
+        <label className="flex items-center mb-4">
+          <input type="checkbox" checked={verified}
+            onChange={() => setVerified(!verified)} className="mr-2" />
+          Therapist verifies session
+        </label>
+
+        {/* SIGNATURE */}
         <p className="font-semibold mb-2">Patient Signature</p>
         <SignatureCanvas
           ref={sigPad}
           canvasProps={{ className: "border w-full h-40 bg-white mb-4" }}
         />
 
-        <button
-          onClick={submit}
-          className="bg-green-600 text-white px-4 py-2 w-full"
-        >
+        <button onClick={submit}
+          className="bg-green-600 text-white px-4 py-2 w-full">
           Submit Treatment
+        </button>
+
+        <button onClick={exportPatient}
+          className="bg-purple-600 text-white px-4 py-2 w-full mt-3">
+          Export Patient Report
         </button>
 
       </div>
