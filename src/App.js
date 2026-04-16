@@ -3,7 +3,7 @@ import axios from "axios";
 import SignatureCanvas from "react-signature-canvas";
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
 const API = "https://api.sheetbest.com/sheets/28a47003-a918-4925-92d6-a6976f4acf6b";
@@ -45,7 +45,7 @@ export default function App() {
     return (e - s) / (1000 * 60) + " min";
   };
 
-  // 🔥 PREMIUM PDF FUNCTION
+  // PDF
   const generatePDF = async () => {
     const element = document.getElementById("report");
 
@@ -58,9 +58,10 @@ export default function App() {
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-    pdf.save(`${patient}_Clinical_Report.pdf`);
+    pdf.save(`${patient || "report"}.pdf`);
   };
 
+  // SUBMIT
   const submit = async () => {
     if (!patient || !therapist || sessions.length === 0) {
       alert("Please complete all required fields");
@@ -83,7 +84,8 @@ export default function App() {
     }
 
     try {
-      const signature = sigPad.current.toDataURL();
+      // 🔥 FIX: guna text sahaja
+      const signature = "SIGNED";
 
       const enrichedSessions = sessions.map(s => ({
         ...s,
@@ -118,11 +120,12 @@ export default function App() {
       axios.get(API).then(res => setData(res.data));
 
     } catch (err) {
-      console.error(err);
+      console.error(err.response || err);
       alert("❌ Error saving data");
     }
   };
 
+  // DASHBOARD
   let robotik = 0, physio = 0, ot = 0;
 
   data.forEach(row => {
@@ -167,7 +170,9 @@ export default function App() {
 
         <div className="bg-white p-4 rounded shadow">
           <p>Total Sessions</p>
-          <h2 className="text-2xl font-bold">{robotik + physio + ot}</h2>
+          <h2 className="text-2xl font-bold">
+            {robotik + physio + ot}
+          </h2>
         </div>
 
         <div className="bg-white p-4 rounded shadow">
@@ -201,6 +206,7 @@ export default function App() {
 
         {sessions.map((s, i) => (
           <div key={i} className="border p-3 mb-3 rounded">
+
             <select className="border p-2 w-full mb-2"
               onChange={e => updateSession(i, "type", e.target.value)}>
               <option>Robotik</option>
@@ -266,11 +272,12 @@ export default function App() {
 
       </div>
 
-      {/* PDF TEMPLATE (HIDDEN) */}
-      <div id="report" className="bg-white p-8 mt-6 text-black">
+      {/* PDF TEMPLATE */}
+      <div id="report" className="absolute left-[-9999px] top-0 bg-white p-8 text-black">
         <h1 className="text-xl font-bold text-center mb-2">
           e-Rehab Clinical Treatment Report
         </h1>
+
         <p className="text-center text-sm mb-4">
           PKTAAB, Universiti Sains Malaysia
         </p>
@@ -292,7 +299,15 @@ export default function App() {
         <p className="mt-3">Consent: {consent ? "YES" : "NO"}</p>
         <p>Verified: {verified ? "YES" : "NO"}</p>
 
-        <img src={sigPad.current?.toDataURL()} className="w-40 mt-4"/>
+        <div className="mt-6">
+          <p><b>Patient Signature:</b></p>
+          {sigPad.current && !sigPad.current.isEmpty() ? (
+            <img src={sigPad.current.toDataURL()} className="w-40 mt-2"/>
+          ) : (
+            <p>SIGNED</p>
+          )}
+        </div>
+
       </div>
 
     </div>
