@@ -2,34 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ================= GLOBAL ================= */
+body {
+  @apply bg-gray-100 font-sans;
+}
+
+/* ================= CARD ================= */
+.card {
+  @apply bg-white rounded-xl shadow-md p-5 mb-4 transition hover:shadow-lg;
+}
+
+/* ================= INPUT ================= */
 .input {
-  width: 100%;
-  border: 1px solid #ddd;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 8px;
+  @apply w-full border border-gray-300 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+/* ================= BUTTONS ================= */
+.btn {
+  @apply w-full py-2 rounded-lg font-semibold transition;
 }
 
 .btn-blue {
-  background: #2563eb;
-  color: white;
-  padding: 10px;
-  border-radius: 8px;
-  width: 100%;
+  @apply btn bg-blue-600 text-white hover:bg-blue-700;
 }
 
 .btn-green {
-  background: #16a34a;
-  color: white;
-  padding: 10px;
-  border-radius: 8px;
-  width: 100%;
+  @apply btn bg-green-600 text-white hover:bg-green-700;
 }
 
 .btn-dark {
-  background: black;
-  color: white;
-  padding: 10px;
-  border-radius: 8px;
-  width: 100%;
+  @apply btn bg-black text-white hover:bg-gray-800;
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+  @apply bg-blue-900 text-white min-h-screen p-5 hidden md:block;
+}
+
+.sidebar-item {
+  @apply cursor-pointer p-2 rounded hover:bg-blue-700;
+}
+
+/* ================= HEADER ================= */
+.header {
+  @apply bg-gradient-to-r from-blue-700 to-blue-500 text-white p-4 rounded-xl shadow mb-6;
+}
+
+/* ================= GRID ================= */
+.dashboard-grid {
+  @apply grid gap-4 md:grid-cols-3;
+}
+
+/* ================= MOBILE FIX ================= */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+
+  .card {
+    padding: 14px;
+  }
 }
