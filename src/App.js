@@ -1,21 +1,21 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
-import Dashboard from "./components/Dashboard";
-import Patients from "./components/Patients";
-import PatientDetail from "./components/PatientDetail";
-import Entry from "./components/Entry";
+import Dashboard from "./pages/Dashboard";
+import Patients from "./pages/Patients";
+import PatientDetail from "./pages/PatientDetail";
+import Entry from "./pages/Entry";
+import "./styles.css";
 
 export default function App() {
   const [page, setPage] = useState("dashboard");
-  const [selectedPatient, setSelectedPatient] = useState("");
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
   return (
-    <div className="flex">
-
+    <div className="app">
       <Sidebar setPage={setPage} />
 
-      <div className="flex-1 p-6 max-w-6xl mx-auto">
+      <div className="main">
         <Header />
 
         {page === "dashboard" && <Dashboard />}
@@ -23,11 +23,10 @@ export default function App() {
           <Patients setPage={setPage} setSelectedPatient={setSelectedPatient} />
         )}
         {page === "detail" && (
-          <PatientDetail name={selectedPatient} setPage={setPage} />
+          <PatientDetail patient={selectedPatient} setPage={setPage} />
         )}
         {page === "entry" && <Entry />}
       </div>
-
     </div>
   );
 }
