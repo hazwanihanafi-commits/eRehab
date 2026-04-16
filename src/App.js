@@ -6,7 +6,7 @@ import "chart.js/auto";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
-const API = "https://api.sheetbest.com/sheets/f2120c7f-e12c-433c-aaef-9d8e9e0f71ae";
+const API = "https://api.sheetbest.com/sheets/28a47003-a918-4925-92d6-a6976f4acf6b";
 
 export default function App() {
   const [patient, setPatient] = useState("");
